@@ -9,7 +9,7 @@ sieve :: [Int] -> [Int]
 sieve [] = []
 --sieve (n:ns) = n:(sieve $ filterDivisibleBy n ns) -- should prolly use '\\' here...
 sieve (n:ns) = n:(sieve $ optimizedFilter [n^2,(n+1)*n..last ns] ns) -- optimization: start removing elements from n-squared, because the predecessors have already been processed by previous iterations
---sieve (n:ns) = n:(sieve (ns \\ [n^2,(n+1)*n..last ns])) -- optimization: start removing elements from n-squared, because the predecessors have already been processed by previous iterations
+--sieve (n:ns) = n:(sieve (ns \\ [n^2,(n+1)*n..last ns]))
 
 filterDivisibleBy :: Int -> [Int] -> [Int]
 filterDivisibleBy n ns = filter (\x -> x `mod` n /= 0) ns
