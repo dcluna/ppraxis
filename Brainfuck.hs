@@ -10,30 +10,32 @@ import Data.Char
 -- Virtual machine
 -- data structures
 data DataCell = Cell  { value :: Int } deriving Show
-data BFMachine = Machine { cells :: [DataCell], pointer :: DataPointer } deriving Show
+data BFMachine = Machine { cells :: [DataCell], pointer :: DataPointer, output :: String } deriving Show
 
 -- synonyms
 type DataPointer = Int
 
 -- maximum number of cells
-max_cell_size = 10 :: Int
+max_cell_size = 300 :: Int
 
 -- functions
 decreasePointer :: BFMachine -> BFMachine
-decreasePointer Machine { cells=oldcells , pointer=0 } = Machine { cells=oldcells, pointer=0 }
-decreasePointer machine = Machine { cells=oldcells, pointer=(oldpointer - 1) }
+decreasePointer Machine { cells=oldcells , pointer=0, output=out } = Machine { cells=oldcells, pointer=0, output=out }
+decreasePointer machine = Machine { cells=oldcells, pointer=(oldpointer - 1), output=out }
   where oldpointer = pointer machine
         oldcells = cells machine
+        out = output machine
 
 increasePointer :: BFMachine -> BFMachine
 increasePointer machine
   | (pointer machine == max_cell_size) = machine
-  | otherwise = Machine { cells=oldcells, pointer=(oldpointer + 1) }
+  | otherwise = Machine { cells=oldcells, pointer=(oldpointer + 1), output=out }
     where oldpointer = pointer machine
           oldcells = cells machine
+          out = output machine
         
 replaceCellAtPointer :: BFMachine -> DataCell -> BFMachine
-replaceCellAtPointer machine newcell = Machine { cells=(less ++ [newcell] ++ more),pointer=datapointer }
+replaceCellAtPointer machine newcell = Machine { cells=(less ++ [newcell] ++ more),pointer=datapointer, output=output machine }
   where oldcells = cells machine
         datapointer = pointer machine
         (less,_:more) = splitAt datapointer (oldcells)
@@ -48,29 +50,36 @@ decreaseCell machine = replaceCellAtPointer machine newcell
   where oldcell = cells machine !! pointer machine
         newcell = Cell ((value oldcell) - 1)
 
-showCurrentCell :: BFMachine -> IO ()
-showCurrentCell machine = do
-  putStrLn $ show(chr $ value (cells machine !! pointer machine))
+showCurrentCell :: BFMachine -> BFMachine
+showCurrentCell machine = Machine { cells=cells machine, pointer=pointer machine, output = output machine ++ [chr currentValue]}
+  where currentCell = cells machine !! pointer machine
+        currentValue = value currentCell
 
 -- Auxiliary functions
 generateCells :: [DataCell]
 generateCells = replicate max_cell_size (Cell 0)
 
 generateMachine :: BFMachine
-generateMachine = Machine { cells=generateCells,pointer=0 }
-
--- Enforces Haskell's type system for vm instructions
-instruction :: (BFMachine -> a) -> BFMachine -> a
-instruction f machine = f machine
+generateMachine = Machine { cells=generateCells,pointer=0,output=[] }
 
 -- END virtual machine
 
---decodeInstruction :: Char -> (BFMachine -> a)
-decodeInstruction '<' = decreasePointer
-decodeInstruction '>' = increasePointer
-decodeInstruction '+' = increaseCell
-decodeInstruction '-' = decreaseCell
---decodeInstruction '.' = showCurrentCell
+-- Code interpreter
+type CodePointer = Int
+type Code = String
+
+-- auxiliary functions
+findMatchingBracketL :: Code -> CodePointer -> Maybe CodePointer
+findMatchingBracketL code codepointer
+  | (code !! codepointer) /= ']' = Nothing
+  | otherwise = matching
+  where (left,right) = splitAt codepointer code
+        leftbrackets =  filter (\x -> fst x == ']') $ zip left [0..] -- zip for ordering the brackets
+        rightbrackets = filter (\x -> fst x == '[') $ zip left [0..]
+        matching
+          | (length rightbrackets >= length leftbrackets) = Just (snd $ (reverse rightbrackets) !! (length leftbrackets)) -- reversed cuz we need to check them 
+          | otherwise = Nothing
+-- END code interpreter
 
 main = do
   line <- getLine
