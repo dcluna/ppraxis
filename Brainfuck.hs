@@ -73,7 +73,7 @@ run '-' = increaseCodePointer . decreaseCell
 run '+' = increaseCodePointer . increaseCell
 run '.' = increaseCodePointer . showCurrentCell
 run '[' = increaseCodePointer . checkCondition
-run ']' = increaseCodePointer . restartLoop
+run ']' = restartLoop
 
 -- recursive function to loop until the end of the code (or error occurrences)
 vmloop :: BFMachine -> Maybe BFMachine
